@@ -65,62 +65,7 @@ public class DynamicGameOfLife extends GameOfLife{
         super.nextGeneration();
     }
 
-    @Override
-    public void aggregateNeighbours(int startColumn, int stopColumn) {
-
-        if(startColumn != stopColumn) {
-            synchronized (grid.get(startColumn - 1)){
-                for (int y = 1; y < getGridHeight() - 1; y++) {
-
-                    if (isCellAlive(startColumn, y)) {
-
-                        for (int a = startColumn - 1; a <= startColumn + 1; a++) {
-                            for (int b = y - 1; b <= y + 1; b++) {
-
-                                if (a != startColumn || b != y) {
-                                    incrementNeighboursAt(a, b);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if(startColumn + 1 < stopColumn) {
-            synchronized (grid.get(startColumn)){
-                for (int y = 1; y < getGridHeight() - 1; y++) {
-
-                    if (isCellAlive(startColumn+1, y)) {
-
-                        for (int a = startColumn+1 - 1; a <= startColumn+1 + 1; a++) {
-                            for (int b = y - 1; b <= y + 1; b++) {
-
-                                if (a != startColumn+1 || b != y) {
-                                    incrementNeighboursAt(a, b);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        for (int x = startColumn + 2 ; x < stopColumn; x++) {
-            for (int y = 1; y < getGridHeight() - 1; y++) {
-
-                if (isCellAlive(x,y)) {
-
-                    for (int a = x - 1; a <= x + 1; a++) {
-                        for (int b = y - 1; b <= y + 1; b++) {
-
-                            if (a != x || b != y) {
-                                incrementNeighboursAt(a,b);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    
 
     /**
      * Will expand or shrink the game board to fit around the pattern
