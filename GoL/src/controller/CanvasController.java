@@ -1,6 +1,7 @@
 package controller;
 
 import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -98,6 +99,7 @@ public class CanvasController {
 
     //list of buttons being pressed right now
     private List<String> buttonsPressed;
+    private int times = 1;
 
     //endregion
 
@@ -164,11 +166,13 @@ public class CanvasController {
                         // is put inside a thread
                         if(!thread.isAlive()){
                             thread = new Thread(() -> {
-                                gol.nextGeneration();
+                                for (int i = 0; i < times; i++) {
+                                    gol.nextGeneration();
+                                }
+                                Platform.runLater(() -> renderCanvas());
                             });
                             thread.start();
                         }
-                        renderCanvas();
 
                         timer = now / 1000000;
 
@@ -184,7 +188,7 @@ public class CanvasController {
      */
     void changeToStatic(){
         // creates new static grid
-        GameOfLife newGol = new StaticGameOfLife(500, 500, gol.getRule().toString());
+        GameOfLife newGol = new StaticGameOfLife(1500, 1500, gol.getRule().toString());
 
         // sets it as primary gol
         changeGol(newGol);
@@ -305,6 +309,13 @@ public class CanvasController {
         }
         if (code.equals("X")) {
             rotateImportRight();
+        }
+        System.out.println(code);
+        if (code.equals("MINUS")) {
+            times*=2;
+        }
+        if (code.equals("SLASH")) {
+            if(times > 1) times/=2;
         }
 
         // checks if "C" is pressed

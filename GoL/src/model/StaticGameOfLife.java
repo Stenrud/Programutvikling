@@ -1,5 +1,6 @@
 package model;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import model.rules.RuleParser;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -13,8 +14,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class StaticGameOfLife extends GameOfLife{
 
     // game board
-    private AtomicBoolean[][] grid;
-    private AtomicInteger[][] neighbours;
+    private boolean[][] grid;
+    private byte[][] neighbours;
 
     //region start-up
 
@@ -45,14 +46,14 @@ public class StaticGameOfLife extends GameOfLife{
      */
     private void createGameBoard(int width, int height) {
 
-        grid = new AtomicBoolean[width][height];
-        neighbours = new AtomicInteger[width][height];
+        grid = new boolean[width][height];
+        neighbours = new byte[width][height];
 
         for (int x = 0; x < width; x++){
 
             for (int y = 0; y < height; y++){
-                grid[x][y] = new AtomicBoolean(false);
-                neighbours[x][y] = new AtomicInteger(0);
+                grid[x][y] = false;
+                neighbours[x][y] = 0;
             }
         }
     }
@@ -67,7 +68,7 @@ public class StaticGameOfLife extends GameOfLife{
      * @return The neighbour-2D-array
      */
     public AtomicInteger[][] getNeighbours() {
-        return neighbours;
+        return new AtomicInteger[2][2];
     }
 
     /**
@@ -76,7 +77,7 @@ public class StaticGameOfLife extends GameOfLife{
      * @return The cell-2D-array
      */
     public AtomicBoolean[][] getGrid() {
-        return grid;
+        return new AtomicBoolean[2][2];
     }
 
     @Override
@@ -91,13 +92,13 @@ public class StaticGameOfLife extends GameOfLife{
 
     @Override
     public int getNeighboursAt(int x, int y) {
-        return neighbours[x][y].get();
+        return neighbours[x][y];
     }
 
     @Override
     public boolean isCellAlive(int x, int y) {
         try {
-            return grid[x][y].get();
+            return grid[x][y];
         } catch (ArrayIndexOutOfBoundsException e){
             return false;
         }
@@ -124,19 +125,19 @@ public class StaticGameOfLife extends GameOfLife{
      *
      * @param grid the grid to be deep copied and set.
      */
-    public void deepCopyOnSet(AtomicBoolean[][] grid) {
+    public void deepCopyOnSet(boolean[][] grid) {
 
-        AtomicBoolean[][] copiedBoard = new AtomicBoolean[grid.length][grid[0].length];
-        neighbours = new AtomicInteger[grid.length][grid[0].length];
+        boolean[][] copiedBoard = new boolean[grid.length][grid[0].length];
+        neighbours = new byte[grid.length][grid[0].length];
         cellCount.set(0);
 
         for (int x = 0; x < grid.length; x++) {
             for (int y = 0; y < grid[0].length; y++) {
 
-                copiedBoard[x][y] = new AtomicBoolean(grid[x][y].get());
-                neighbours[x][y] = new AtomicInteger(0);
+                copiedBoard[x][y] = grid[x][y];
+                neighbours[x][y] = 0;
 
-                if(grid[x][y].get()) {
+                if(grid[x][y]) {
                     cellCount.incrementAndGet();
                 }
             }
@@ -153,7 +154,7 @@ public class StaticGameOfLife extends GameOfLife{
      *
      * @param grid Cell grid
      */
-    public void setGrid(AtomicBoolean[][] grid) {
+    public void setGrid(boolean[][] grid) {
         this.grid = grid;
     }
 
@@ -163,7 +164,7 @@ public class StaticGameOfLife extends GameOfLife{
         if(!isCellAlive(x,y)){
 
             try {
-                grid[x][y].set(true);
+                grid[x][y]=true;
                 cellCount.incrementAndGet();
             } catch (IndexOutOfBoundsException ignored){
             }
@@ -175,8 +176,46 @@ public class StaticGameOfLife extends GameOfLife{
 
         if(isCellAlive(x,y)) {
 
-            grid[x][y].set(false);
+            grid[x][y]=false;
             cellCount.decrementAndGet();
+        }
+    }
+    @Override
+    public void aggregateNeighbours(int startColumn, int stopColumn) {
+
+        if(startColumn != stopColumn) {
+            synchronized (grid[startColumn - 1]){
+                for (int y = 1; y < getGridHeight() - 1; y++) {
+
+                    if (isCellAlive(startColumn, y)) {
+
+                        for (int a = startColumn - 1; a <= startColumn + 1; a++) {
+                            for (int b = y - 1; b <= y + 1; b++) {
+
+                                if (a != startColumn || b != y) {
+                                    incrementNeighboursAt(a, b);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for (int x = startColumn + 1 ; x < stopColumn; x++) {
+            for (int y = 1; y < getGridHeight() - 1; y++) {
+
+                if (isCellAlive(x,y)) {
+
+                    for (int a = x - 1; a <= x + 1; a++) {
+                        for (int b = y - 1; b <= y + 1; b++) {
+
+                            if (a != x || b != y) {
+                                incrementNeighboursAt(a,b);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -185,8 +224,8 @@ public class StaticGameOfLife extends GameOfLife{
 
         for (int x = 0; x < getGridWidth(); x++) {
             for (int y = 0; y < getGridHeight(); y++) {
-                grid[x][y].set(false);
-                neighbours[x][y].set(0);
+                grid[x][y]=false;
+                neighbours[x][y]=0;
             }
         }
 
@@ -194,11 +233,11 @@ public class StaticGameOfLife extends GameOfLife{
     }
 
     @Override
-    protected void incrementNeighboursAt(int x, int y){ neighbours[x][y].incrementAndGet();}
+    protected void incrementNeighboursAt(int x, int y){ neighbours[x][y]++;}
 
     @Override
     public void resetNeighboursAt(int x, int y) {
-        neighbours[x][y].set(0);
+        neighbours[x][y]=0;
     }
 
     //endregion

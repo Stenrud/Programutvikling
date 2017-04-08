@@ -15,8 +15,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DynamicGameOfLife extends GameOfLife{
 
     // game board
-    private ArrayList<ArrayList<AtomicBoolean>> grid;
-    private ArrayList<ArrayList<AtomicInteger>> neighbours;
+    private ArrayList<ArrayList<Boolean>> grid;
+    private ArrayList<ArrayList<Integer>> neighbours;
 
     //region start up
 
@@ -51,8 +51,8 @@ public class DynamicGameOfLife extends GameOfLife{
 
         grid.add(new ArrayList<>());
         neighbours.add(new ArrayList<>());
-        grid.get(0).add(new AtomicBoolean(false));
-        neighbours.get(0).add(new AtomicInteger(0));
+        grid.get(0).add(new Boolean(false));
+        neighbours.get(0).add(new Integer(0));
     }
     //endregion
 
@@ -63,6 +63,63 @@ public class DynamicGameOfLife extends GameOfLife{
 
         fitBoardToPattern();
         super.nextGeneration();
+    }
+
+    @Override
+    public void aggregateNeighbours(int startColumn, int stopColumn) {
+
+        if(startColumn != stopColumn) {
+            synchronized (grid.get(startColumn - 1)){
+                for (int y = 1; y < getGridHeight() - 1; y++) {
+
+                    if (isCellAlive(startColumn, y)) {
+
+                        for (int a = startColumn - 1; a <= startColumn + 1; a++) {
+                            for (int b = y - 1; b <= y + 1; b++) {
+
+                                if (a != startColumn || b != y) {
+                                    incrementNeighboursAt(a, b);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if(startColumn + 1 < stopColumn) {
+            synchronized (grid.get(startColumn)){
+                for (int y = 1; y < getGridHeight() - 1; y++) {
+
+                    if (isCellAlive(startColumn+1, y)) {
+
+                        for (int a = startColumn+1 - 1; a <= startColumn+1 + 1; a++) {
+                            for (int b = y - 1; b <= y + 1; b++) {
+
+                                if (a != startColumn+1 || b != y) {
+                                    incrementNeighboursAt(a, b);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for (int x = startColumn + 2 ; x < stopColumn; x++) {
+            for (int y = 1; y < getGridHeight() - 1; y++) {
+
+                if (isCellAlive(x,y)) {
+
+                    for (int a = x - 1; a <= x + 1; a++) {
+                        for (int b = y - 1; b <= y + 1; b++) {
+
+                            if (a != x || b != y) {
+                                incrementNeighboursAt(a,b);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -120,8 +177,8 @@ public class DynamicGameOfLife extends GameOfLife{
 
             for (int j = 0; j < grid.get(0).size(); j++) {
 
-                grid.get(grid.size() - 1).add(new AtomicBoolean(false));
-                neighbours.get(grid.size() - 1).add(new AtomicInteger(0));
+                grid.get(grid.size() - 1).add(new Boolean(false));
+                neighbours.get(grid.size() - 1).add(new Integer(0));
             }
         }
     }
@@ -136,8 +193,8 @@ public class DynamicGameOfLife extends GameOfLife{
         for (int i = 0; i < grid.size(); i++) {
             for (int j = 0; j < diffY; j++){
 
-                grid.get(i).add(new AtomicBoolean(false));
-                neighbours.get(i).add(new AtomicInteger(0));
+                grid.get(i).add(new Boolean(false));
+                neighbours.get(i).add(new Integer(0));
             }
         }
     }
@@ -158,8 +215,8 @@ public class DynamicGameOfLife extends GameOfLife{
 
             for (int j = 0; j < grid.get(1).size(); j++) {
 
-                grid.get(0).add(new AtomicBoolean(false));
-                neighbours.get(0).add(new AtomicInteger(0));
+                grid.get(0).add(new Boolean(false));
+                neighbours.get(0).add(new Integer(0));
             }
         }
     }
@@ -176,8 +233,8 @@ public class DynamicGameOfLife extends GameOfLife{
         for (int i = 0; i < grid.size(); i++) {
             for (int j = 0; j < diffY; j++){
 
-                grid.get(i).add(0, new AtomicBoolean(false));
-                neighbours.get(i).add(0, new AtomicInteger(0));
+                grid.get(i).add(0, new Boolean(false));
+                neighbours.get(i).add(0, new Integer(0));
             }
         }
     }
@@ -254,7 +311,7 @@ public class DynamicGameOfLife extends GameOfLife{
      *
      * @return The neighbour-2D-array
      */
-    public ArrayList<ArrayList<AtomicInteger>> getNeighbours() {
+    public ArrayList<ArrayList<Integer>> getNeighbours() {
         return neighbours;
     }
 
@@ -263,7 +320,7 @@ public class DynamicGameOfLife extends GameOfLife{
      *
      * @return The cell-2D-array
      */
-    public ArrayList<ArrayList<AtomicBoolean>> getGrid() {
+    public ArrayList<ArrayList<Boolean>> getGrid() {
         return grid;
     }
 
@@ -275,7 +332,7 @@ public class DynamicGameOfLife extends GameOfLife{
 
     @Override
     public int getNeighboursAt(int x, int y){
-        return neighbours.get(x).get(y).get();
+        return neighbours.get(x).get(y);
     }
 
     @Override
@@ -285,7 +342,7 @@ public class DynamicGameOfLife extends GameOfLife{
             return false;
 
         try{
-            return  grid.get(x).get(y).get();
+            return  grid.get(x).get(y);
         }
         catch(IndexOutOfBoundsException e){
             return false;
@@ -310,7 +367,7 @@ public class DynamicGameOfLife extends GameOfLife{
      * Deep copies the grid and sets it.
      * @param grid the grid to be deep copied and set.
      */
-    private void deepCopyOnSet(ArrayList<ArrayList<AtomicBoolean>> grid) {
+    private void deepCopyOnSet(ArrayList<ArrayList<Boolean>> grid) {
 
         neighbours.clear();
         cellOffsetX = 0;
@@ -324,8 +381,8 @@ public class DynamicGameOfLife extends GameOfLife{
 
             for (int y = 0; y < grid.get(x).size(); y++) {
 
-                this.grid.get(x).add(new AtomicBoolean(grid.get(x).get(y).get()));
-                neighbours.get(x).add(new AtomicInteger(0));
+                this.grid.get(x).add(new Boolean(grid.get(x).get(y)));
+                neighbours.get(x).add(new Integer(0));
             }
         }
     }
@@ -338,7 +395,7 @@ public class DynamicGameOfLife extends GameOfLife{
      *
      * @param grid Cell grid
      */
-    public void setGrid(ArrayList<ArrayList<AtomicBoolean>> grid) {
+    public void setGrid(ArrayList<ArrayList<Boolean>> grid) {
         this.grid = grid;
     }
 
@@ -348,7 +405,7 @@ public class DynamicGameOfLife extends GameOfLife{
         if(!isCellAlive(x,y)) {
 
             try {
-                grid.get(x).get(y).set(true);
+                grid.get(x).set(y, true);
             }
             catch (IndexOutOfBoundsException e) {
 
@@ -360,7 +417,7 @@ public class DynamicGameOfLife extends GameOfLife{
                 if(diffY > 0)
                     increaseYBottom(diffY);
 
-                grid.get(x).get(y).set(true);
+                grid.get(x).set(y, true);
             }
 
             cellCount.incrementAndGet();
@@ -372,7 +429,7 @@ public class DynamicGameOfLife extends GameOfLife{
 
         if(isCellAlive(x,y)) {
 
-            grid.get(x).get(y).set(false);
+            grid.get(x).set(y, false);
             cellCount.decrementAndGet();
         }
     }
@@ -386,18 +443,18 @@ public class DynamicGameOfLife extends GameOfLife{
         grid.add(new ArrayList<>());
         neighbours.add(new ArrayList<>());
 
-        grid.get(0).add(new AtomicBoolean(false));
-        neighbours.get(0).add(new AtomicInteger(0));
+        grid.get(0).add(new Boolean(false));
+        neighbours.get(0).add(new Integer(0));
 
         cellCount.set(0);
     }
 
     @Override
-    protected void incrementNeighboursAt(int x, int y){ neighbours.get(x).get(y).incrementAndGet(); }
+    protected void incrementNeighboursAt(int x, int y){ neighbours.get(x).set(y, neighbours.get(x).get(y) + 1); }
 
     @Override
     public void resetNeighboursAt(int x, int y){
-        neighbours.get(x).get(y).set(0);
+        neighbours.get(x).set(y, 0);
     }
     //endregion
 }
